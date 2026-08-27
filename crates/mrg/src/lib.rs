@@ -84,6 +84,13 @@ pub struct GateReport {
 ///
 /// Comments are removed before matching. This deliberately avoids labeling a
 /// normal `ALTER TABLE ... ADD COLUMN` as destructive.
+///
+/// ```
+/// use migration_replay_gate::destructive_statements;
+///
+/// let findings = destructive_statements("ALTER TABLE users DROP COLUMN legacy_email;");
+/// assert_eq!(findings, ["ALTER TABLE users DROP COLUMN legacy_email"]);
+/// ```
 pub fn destructive_statements(text: &str) -> Vec<String> {
     split_statements(text)
         .into_iter()

@@ -117,25 +117,16 @@ pub fn run_gate(options: &GateOptions) -> Result<GateReport, GateError> {
         container.apply_fixture("gate_partial", fixture)?;
     }
 
-    let mut scenarios = Vec::new();
-    scenarios.push(container.run_scenario(
-        ScenarioKind::CleanApply,
-        "gate_clean",
-        options,
-        &password,
-    )?);
-    scenarios.push(container.run_scenario(
-        ScenarioKind::RepeatApply,
-        "gate_clean",
-        options,
-        &password,
-    )?);
-    scenarios.push(container.run_scenario(
-        ScenarioKind::PartialApply,
-        "gate_partial",
-        options,
-        &password,
-    )?);
+    let scenarios = vec![
+        container.run_scenario(ScenarioKind::CleanApply, "gate_clean", options, &password)?,
+        container.run_scenario(ScenarioKind::RepeatApply, "gate_clean", options, &password)?,
+        container.run_scenario(
+            ScenarioKind::PartialApply,
+            "gate_partial",
+            options,
+            &password,
+        )?,
+    ];
 
     container.stop();
     Ok(GateReport {

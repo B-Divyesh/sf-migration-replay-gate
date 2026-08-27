@@ -8,8 +8,9 @@
     "build": "npm run build:site",
     "build:site": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "cargo test --workspace && node --test site/tests/*.test.mjs && npm run build:site && playwright test",
-    "test:site": "node --test site/tests/*.test.mjs && playwright test"
+    "test": "cargo test --workspace && npm run typecheck && node --test site/tests/*.test.mjs && npm run build:site && playwright test",
+    "test:site": "node --test site/tests/*.test.mjs && playwright test",
+    "typecheck": "tsc --noEmit -p site/tsconfig.json"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",

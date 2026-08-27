@@ -2,6 +2,8 @@
 
 Migration Replay Gate (`mrg`) is a CI gate for teams whose schema migration or snapshot tool needs to behave safely when reality is messy. It starts a disposable Postgres container, seeds a baseline and an explicit partial-state fixture, runs your own migration command against clean, repeated, and partial states, captures emitted DDL and errors, then exits non-zero for destructive, non-idempotent, or failed outcomes.
 
+Landing page and interactive replay: <https://migration-replay-gate.sociobot.in>
+
 It never accepts a database URL and never connects to staging or production. The tested command receives an ephemeral loopback `DATABASE_URL` plus standard `PG*` variables.
 
 ## Install
