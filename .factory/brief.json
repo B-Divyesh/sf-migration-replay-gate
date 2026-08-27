@@ -1,0 +1,11 @@
+{
+  "slug": "migration-replay-gate",
+  "title": "Migration Replay Gate",
+  "territory": "devtools-data",
+  "user": "A team using schema snapshots and migrations that needs to replay an intended change against a disposable database and identify unsafe or non-idempotent operations before an environment apply fails.",
+  "smallest_useful_product": "CLI starts a disposable Postgres database, seeds selected schema-state fixtures, applies a migration/diff command twice and after a partial state, captures SQL/errors, and labels non-idempotent/destructive outcomes.",
+  "success_measure": "In a fixture suite with known duplicate-table, destructive, and clean changes, it correctly identifies each outcome and blocks the unsafe cases in CI.",
+  "artifact_class": "cli",
+  "monetization": "free",
+  "constraints": "Run only disposable containers; require user-supplied migration command; make destructive test fixtures explicit; never accept production connection strings."
+}
