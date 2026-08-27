@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#061117" />
+    <meta
+      name="description"
+      content="Replay migration commands against disposable clean, repeated, and partial Postgres states before CI lets them near an environment."
+    />
+    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Migration Replay Gate — test what your migration actually does</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="offline-banner" id="offline-banner" role="status" hidden>
+      You’re offline. The docs and recorded replay still work; installs need a connection.
+    </div>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>MRG<span class="brand-long"> / Migration Replay Gate</span></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#replay">Replay</a>
+        <a href="#workflow">How it works</a>
+        <a class="nav-install" href="#install">Install CLI</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span aria-hidden="true">●</span> Disposable Postgres replay</p>
+          <h1 id="hero-title">Trust the replay.<br /><em>Not the diff.</em></h1>
+          <p class="hero-deck">
+            Run your migration command against clean, repeated, and partially applied schema states. Catch duplicate objects, destructive DDL, and false assumptions before an environment apply.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#install">Install the CLI</a>
+            <a class="button secondary" href="#replay">Watch a replay <span aria-hidden="true">↓</span></a>
+          </div>
+          <ul class="assurances" aria-label="Product assurances">
+            <li><span aria-hidden="true">✓</span> Disposable containers only</li>
+            <li><span aria-hidden="true">✓</span> Zero telemetry</li>
+            <li><span aria-hidden="true">✓</span> CI-ready JSON</li>
+          </ul>
+        </div>
+        <figure class="hero-visual">
+          <picture>
+            <source media="(max-width: 480px)" srcset="/replay-landscape-480.webp" />
+            <source media="(max-width: 720px)" srcset="/replay-landscape-720.webp" />
+            <img
+              src="/replay-landscape.webp"
+              width="1280"
+              height="853"
+              fetchpriority="high"
+              alt="Three translucent database schema planes connected by a cyan replay path, with an amber fracture revealing divergence in the partial state."
+            />
+          </picture>
+          <figcaption>
+            <span>Replay field / 03 states</span>
+            <span class="coordinates" aria-hidden="true">40.7128° N · ISOLATED</span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="replay-section" id="replay" aria-labelledby="replay-title">
+        <div class="section-heading">
+          <p class="eyebrow">Recorded replay / interactive</p>
+          <h2 id="replay-title">See the failure before production does.</h2>
+          <p>This browser demo uses recorded output—your SQL never leaves the page. Use Left and Right arrows on the replay rail.</p>
+        </div>
+
+        <div class="replay-console">
+          <div class="scenario-tabs" role="tablist" aria-label="Replay scenario">
+            <button id="tab-clean" role="tab" aria-selected="true" aria-controls="terminal-output" tabindex="0" data-scenario="clean">
+              <span class="step">01</span><span><b>Clean apply</b><small>Fresh baseline</small></span><span class="state-dot" aria-hidden="true"></span>
+            </button>
+            <button id="tab-repeat" role="tab" aria-selected="false" aria-controls="terminal-output" tabindex="-1" data-scenario="repeat">
+              <span class="step">02</span><span><b>Repeat apply</b><small>Same database</small></span><span class="state-dot" aria-hidden="true"></span>
+            </button>
+            <button id="tab-partial" role="tab" aria-selected="false" aria-controls="terminal-output" tabindex="-1" data-scenario="partial">
+              <span class="step">03</span><span><b>Partial state</b><small>Fixture + apply</small></span><span class="state-dot" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="terminal-frame">
+            <div class="terminal-bar">
+              <span class="terminal-title"><span aria-hidden="true">▰</span> mrg / replay.log</span>
+              <button class="copy-button" type="button" data-copy-target="terminal-code">Copy output</button>
+            </div>
+            <div id="terminal-output" role="tabpanel" aria-labelledby="tab-clean">
+              <pre id="terminal-code" tabindex="0"><code><span class="muted">Ready. Choose a schema state, then run the recorded replay.</span></code></pre>
+              <div class="terminal-result" id="terminal-result" aria-live="polite">
+                <span class="result-label">Awaiting replay</span>
+                <span class="result-meta">No database connection is made in this demo.</span>
+              </div>
+            </div>
+            <button class="button run-button" id="run-replay" type="button">
+              <span aria-hidden="true">▶</span> Run recorded replay
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="workflow" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">One container / three truths</p>
+          <h2 id="workflow-title">A behavioral gate, not another schema diff.</h2>
+        </div>
+        <ol class="workflow-list">
+          <li>
+            <span class="workflow-number">01</span>
+            <div><h3>Seed known state</h3><p>Your baseline and explicit partial fixture enter two isolated databases inside one disposable Postgres container.</p></div>
+          </li>
+          <li>
+            <span class="workflow-number">02</span>
+            <div><h3>Run your real command</h3><p>The exact migration, ORM, or schema-apply command runs once, twice, and against the partial state with an injected local URL.</p></div>
+          </li>
+          <li>
+            <span class="workflow-number">03</span>
+            <div><h3>Block on behavior</h3><p>Process errors and Postgres DDL become a human report or stable JSON. Unsafe outcomes exit 2 and stop CI.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div class="install-copy">
+          <p class="eyebrow">Open source / v0.1.0</p>
+          <h2 id="install-title">Put reality in the pipeline.</h2>
+          <p>Build the single binary, point it at fixture SQL, and keep your existing migration tool.</p>
+          <a class="text-link" href="https://github.com/B-Divyesh/sf-migration-replay-gate">Read the source and full CLI reference <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="command-block">
+          <div class="command-label"><span>Shell</span><button type="button" class="copy-button" data-copy-target="install-command">Copy command</button></div>
+          <pre id="install-command" tabindex="0"><code><span class="prompt">$</span> cargo install --git https://github.com/B-Divyesh/sf-migration-replay-gate
+
+<span class="prompt">$</span> mrg gate \
+    --command <span class="string">"npm run migrate"</span> \
+    --baseline fixtures/baseline.sql \
+    --partial fixtures/partial.sql \
+    --json</code></pre>
+        </div>
+      </section>
+
+      <section class="boundary" aria-labelledby="boundary-title">
+        <div class="boundary-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div>
+          <p class="eyebrow">Hard safety boundary</p>
+          <h2 id="boundary-title">It cannot be pointed at production.</h2>
+          <p>There is no connection-string option. MRG removes ambient Postgres targets, injects a loopback-only disposable URL, and tears the labeled container down after success, failure, or timeout.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>MRG</span></a>
+      <p>Built for migration reviewers who prefer evidence to hope.</p>
+      <nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-migration-replay-gate">GitHub</a></nav>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

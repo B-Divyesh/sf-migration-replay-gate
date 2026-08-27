@@ -1,0 +1,10 @@
+{
+  "name": "Migration Replay Gate",
+  "short_name": "MRG",
+  "description": "Replay migration commands against disposable Postgres states.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#061117",
+  "theme_color": "#061117",
+  "icons": [{ "src": "/mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

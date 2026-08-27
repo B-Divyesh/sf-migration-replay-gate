@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://migration-replay-gate.sociobot.in/sitemap.xml

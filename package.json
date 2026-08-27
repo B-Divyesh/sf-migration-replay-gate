@@ -1,0 +1,20 @@
+{
+  "name": "migration-replay-gate-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "npm run build:site",
+    "build:site": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "cargo test --workspace && node --test site/tests/*.test.mjs && npm run build:site && playwright test",
+    "test:site": "node --test site/tests/*.test.mjs && playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.2",
+    "vite": "7.3.6"
+  }
+}
