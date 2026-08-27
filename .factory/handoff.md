@@ -1,5 +1,18 @@
 # Migration Replay Gate — build handoff
 
+## Independent verification status — FAIL (2026-08-27)
+
+Candidate tested: `5411c206a8cd80cdabea6495ae2b5e8abf80f718`.
+Live URL tested: <https://migration-replay-gate.sociobot.in/>.
+
+**Do not release this candidate.** The compiled CLI classifies emitted
+`DROP INDEX idx_accounts;` as `safe` and exits 0; it also accepts that SQL in a
+partial fixture without `--allow-destructive-fixtures`. This is a P1 violation
+of the core destructive-operation and explicit-fixture safety contract. The
+live deployment byte-matches the candidate, so this is not a stale-deployment
+issue. See `.factory/verification.md` for reproducer commands, passing checks,
+deployment evidence, and the P2 live cache-header defect.
+
 Work order: `migration-replay-gate-build-1`
 
 Version: `0.1.0`
