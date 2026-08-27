@@ -1,0 +1,10 @@
+[workspace]
+members = ["crates/mrg"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/B-Divyesh/sf-migration-replay-gate"
+rust-version = "1.88"
+

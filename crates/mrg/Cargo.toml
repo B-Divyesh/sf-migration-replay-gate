@@ -1,0 +1,20 @@
+[package]
+name = "migration-replay-gate"
+version = "0.1.0"
+description = "Replay migration commands against disposable clean, repeated, and partial Postgres states"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+keywords = ["postgres", "migrations", "ci", "database", "cli"]
+categories = ["command-line-utilities", "development-tools::testing"]
+
+[[bin]]
+name = "mrg"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.47", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
