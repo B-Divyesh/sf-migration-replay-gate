@@ -11,6 +11,25 @@ test("landing page has one clear heading and no console errors", async ({ page }
   expect(errors).toEqual([]);
 });
 
+for (const legalPage of [
+  { path: "/privacy/", title: /Privacy/ },
+  { path: "/terms/", title: /Terms/ }
+]) {
+  test(`${legalPage.path} loads without CSP console errors under production headers`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+    page.on("pageerror", (error) => errors.push(error.message));
+
+    const response = await page.goto(legalPage.path);
+    expect(response?.headers()["content-security-policy"]).toContain("style-src 'self'");
+    await expect(page).toHaveTitle(legalPage.title);
+    await expect(page.locator("style")).toHaveCount(0);
+    await expect(page.locator('link[rel="stylesheet"]')).toHaveCount(1);
+    await expect(page.locator("main")).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}
+
 test("recorded partial replay exposes an actionable blocked state", async ({ page }) => {
   await page.goto("/#replay");
   await page.getByRole("tab", { name: /Partial state/ }).click();

@@ -1,8 +1,13 @@
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
+import deploymentConfig from "./site/public/staticwebapp.config.json" with { type: "json" };
 
 export default defineConfig({
   root: "site",
+  preview: {
+    // Keep browser regressions on the same response policy as the static deployment.
+    headers: deploymentConfig.globalHeaders
+  },
   build: {
     outDir: "../dist/site",
     emptyOutDir: true,

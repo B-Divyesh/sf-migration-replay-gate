@@ -1,0 +1,37 @@
+:root {
+  color-scheme: dark;
+  background: #061117;
+  color: #f2f8f5;
+  font: 16px/1.65 system-ui;
+}
+
+body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8vh 24px;
+}
+
+a { color: #77e8d2; }
+
+h1 {
+  font-size: clamp(2.5rem, 9vw, 4.8rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+h2 { margin-top: 40px; }
+
+p,
+li { color: #afc4c3; }
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip:focus {
+  left: 12px;
+  padding: 12px;
+  color: #06211e;
+  background: #f7d27d;
+}
