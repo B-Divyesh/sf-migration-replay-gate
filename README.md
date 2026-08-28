@@ -50,7 +50,7 @@ mrg gate --command "npm run migrate" \
   --json > replay-report.json
 ```
 
-Exit codes are `0` safe, `2` unsafe replay outcome, `3` invalid input, and `4` container/runtime failure. Fixtures containing destructive SQL are rejected unless `--allow-destructive-fixtures` is present; destructive SQL observed from the migration command always blocks the gate.
+Exit codes are `0` safe, `2` unsafe replay outcome, `3` invalid input, and `4` container/runtime failure. Fixtures containing destructive SQL are rejected unless `--allow-destructive-fixtures` is present; destructive SQL observed from the migration command always blocks the gate. The gate treats every PostgreSQL `DROP` statement (including indexes, views, sequences, and constraints), `TRUNCATE`, and `ALTER TABLE`/`ALTER DOMAIN` removal clauses as destructive.
 
 ## What gets tested
 

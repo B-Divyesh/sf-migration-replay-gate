@@ -35,3 +35,29 @@ test("mobile layout keeps primary actions and replay usable", async ({ page }, t
   await page.getByRole("button", { name: /Run recorded replay/ }).click();
   await expect(page.getByText("PASS / IDEMPOTENT")).toBeVisible();
 });
+
+test("offline reload keeps the recorded replay available", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await page.context().setOffline(true);
+  try {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /Trust the replay/ })).toBeVisible();
+    await page.getByRole("tab", { name: /Partial state/ }).click();
+    await page.getByRole("button", { name: /Run recorded replay/ }).click();
+    await expect(page.getByText("BLOCKED / PARTIAL-STATE FAILURE")).toBeVisible();
+  } finally {
+    await page.context().setOffline(false);
+  }
+});
+
+test("landing page makes no third-party requests", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().startsWith("http")) requests.push(request.url());
+  });
+
+  await page.goto("/");
+  expect(requests.every((url) => new URL(url).origin === "http://127.0.0.1:4173")).toBe(true);
+});

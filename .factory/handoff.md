@@ -1,36 +1,53 @@
-# Migration Replay Gate — build handoff
+# Migration Replay Gate — repair handoff
 
-## Independent verification status — FAIL (2026-08-27)
+## Release decision — PASS locally (2026-08-28)
 
-Candidate tested: `5411c206a8cd80cdabea6495ae2b5e8abf80f718`.
-Live URL tested: <https://migration-replay-gate.sociobot.in/>.
+Repaired the independent verifier findings from candidate
+`5411c206a8cd80cdabea6495ae2b5e8abf80f718` (report commit
+`bf4f5857bef2b9b361c86453505a4893ff6f869e`). This remains the same Rust
+`mrg` CLI and Vite static documentation site, now at version `0.1.1`.
 
-**Do not release this candidate.** The compiled CLI classifies emitted
-`DROP INDEX idx_accounts;` as `safe` and exits 0; it also accepts that SQL in a
-partial fixture without `--allow-destructive-fixtures`. This is a P1 violation
-of the core destructive-operation and explicit-fixture safety contract. The
-live deployment byte-matches the candidate, so this is not a stale-deployment
-issue. See `.factory/verification.md` for reproducer commands, passing checks,
-deployment evidence, and the P2 live cache-header defect.
+## Repairs
 
-Work order: `migration-replay-gate-build-1`
+- **P1 destructive `DROP INDEX` verdict:** the SQL policy now blocks every
+  PostgreSQL `DROP` statement, `TRUNCATE`, and removal clauses in `ALTER
+  TABLE` and `ALTER DOMAIN`. This covers `DROP INDEX`, `DROP VIEW`, `DROP
+  SEQUENCE`, and `ALTER TABLE ... DROP CONSTRAINT` as well as the previously
+  covered column/table forms. The same policy validates fixtures, so a
+  destructive fixture requires `--allow-destructive-fixtures`.
+- **P1 duplicate destructive findings:** normalized destructive evidence is
+  de-duplicated when the same DDL appears in both the database log and command
+  output. Each scenario now reports one finding for one observed statement.
+- **P2 deployment cache rules:** added
+  `site/public/staticwebapp.config.json`, the Azure Static Web Apps deployment
+  configuration used by the factory static host. It makes `/assets/*` and all
+  three versioned hero WebP files immutable for one year, while `/sw.js` is
+  explicitly revalidated (`no-cache, max-age=0, must-revalidate`). The
+  configuration is copied into `dist/site` by the production build.
+- **Offline regression coverage:** service workers are also enabled for secure
+  loopback development origins, allowing the browser suite to verify an actual
+  offline reload rather than only source inspection. Production continues to
+  register only on HTTPS.
 
-Version: `0.1.0`
+## Exact regression coverage
 
-Completed: 2026-08-27
+- Rust unit coverage verifies `DROP INDEX`, `DROP VIEW`, `DROP SEQUENCE`,
+  `ALTER TABLE ... DROP CONSTRAINT`, `ALTER DOMAIN ... DROP CONSTRAINT`, and
+  ignores a commented `DROP` / non-destructive add-column statement.
+- A black-box CLI integration test supplies a deterministic fake Docker
+  runtime and runs `printf 'DROP INDEX idx_accounts;\\n'` through clean,
+  repeat, and partial scenarios. It asserts exit **2**, `unsafe`, and exactly
+  one `destructive_sql` finding per scenario.
+- A second black-box CLI test supplies a partial fixture containing `DROP
+  INDEX idx_accounts;` and asserts input exit **3** and the explicit
+  `--allow-destructive-fixtures` guidance.
+- Deployment configuration tests assert the immutable asset/image and
+  revalidated-service-worker response policy. Browser tests now also cover
+  offline reload plus no third-party requests.
 
-## What shipped
+## Verification performed
 
-- A Rust `mrg` single-binary CLI built with clap. `mrg gate` starts one labeled disposable Postgres container through Docker or Podman, creates isolated clean and partial databases, seeds repeatable baseline/partial SQL fixtures, and runs the user’s real migration command in clean, repeat, and partial-state scenarios.
-- Runtime safeguards: no database URL argument, rejection of embedded Postgres URLs/targets in the command, replacement of common ambient database variables, a loopback-only published Postgres port, explicit opt-in for destructive fixture SQL, bounded command/startup timeouts, output credential redaction, and container cleanup on normal completion/error paths.
-- Behavioral reporting: captures command output and Postgres DDL logs; classifies command failures, non-idempotent repeats, partial-state failures, and destructive DDL. Human and stable JSON output are available. Exit codes are 0 safe, 2 unsafe, 3 invalid input, and 4 runtime failure.
-- Known-outcome tests for clean, duplicate-table, and destructive changes, plus CLI safety/exit-code tests and an optional real-container smoke script at `scripts/smoke-docker.sh`.
-- A Vite static docs site in `dist/site`, including the CLI reference, an interactive recorded replay with empty/loading/safe/blocked states, keyboard tabs, responsive 390 px layout, clipboard feedback, offline status/fallback, privacy and terms pages, cache headers, and a service worker.
-- A product-specific luminous glass system documented in `.factory/design.md`. The original hero was generated with `/opt/fleet/lib/gen-image.sh` (`factory-image`) and optimized to responsive WebP assets (13 KB mobile, 26 KB tablet, 71 KB desktop). The prompt and provenance are recorded in the design file.
-
-## Build and verification
-
-From a clean clone:
+From a clean dependency install:
 
 ```sh
 npm ci
@@ -40,20 +57,44 @@ cargo build --release --workspace
 cargo package -p migration-replay-gate --allow-dirty
 ```
 
-- `npm test`: passes Rust unit/integration/doc tests, TypeScript checking, Node demo-data tests, production site build, and 14 Chromium desktop/mobile Playwright checks (one deliberately skipped desktop-only duplicate of the mobile-specific assertion).
-- Playwright + axe: no serious or critical violations on `/`, `/privacy/`, or `/terms/` at desktop and 390 px mobile sizes; navigation, keyboard arrow behavior, blocked-state feedback, title, main landmark, single H1, and console cleanliness are exercised.
-- Lighthouse 12.8.2 mobile: Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**. FCP 0.9 s, LCP 1.1 s, Speed Index 0.9 s, total blocking time 0 ms, CLS 0.
-- Production budgets: initial JS 4.69 KB (2.08 KB gzip), CSS 11.96 KB (3.51 KB gzip), no webfont payload, 13 KB mobile hero. All are below the supplied budgets.
-- `npm audit`: 0 vulnerabilities.
-- `cargo package`: produced `target/package/migration-replay-gate-0.1.0.crate` (13 KB) and completed package verification.
-- Release binary: `target/release/mrg` (about 1.4 MB in this environment).
+- `npm ci`: completed; `npm audit` reported 0 vulnerabilities.
+- `npm test`: passed all Rust unit/integration/doctests, TypeScript check,
+  Node tests, production build, and Playwright. Browser result: **17 passed,
+  1 intentionally skipped** across desktop and the 390 × 844 mobile project.
+  This includes keyboard-arrow replay tabs, axe serious/critical checks on
+  `/`, `/privacy/`, and `/terms/`, privacy/no-third-party requests, and a
+  service-worker offline reload that can still run the recorded partial replay.
+- `cargo build --release --workspace`: passed; binary is
+  `target/release/mrg` (about 1.4 MB here).
+- `cargo package -p migration-replay-gate --allow-dirty`: passed its package
+  verification and produced `target/package/migration-replay-gate-0.1.1.crate`
+  (about 15 KB). A separate `cargo install --path crates/mrg --root <temp>
+  --force` succeeded; both `mrg --help` and `mrg gate --help` were exercised.
+- Production site build: `dist/site`, including
+  `staticwebapp.config.json`. Payloads: JS **4.77 KB** (2.11 KB gzip), CSS
+  **11.96 KB** (3.51 KB gzip), mobile hero **13 KB**; all remain within budget.
+- Local Lighthouse 12.8.2 mobile (Chromium): Performance **100**,
+  Accessibility **100**, Best Practices **100**, SEO **100**; FCP **0.9 s**,
+  LCP **1.2 s**, total blocking time **0 ms**, CLS **0**. The Lighthouse
+  runner reported a post-audit headless-tab crash, but wrote the complete JSON
+  report and all category/metric results above.
 
-## Deploy and publish
+## Deployment and consumer handoff
 
-- Static deployment root: `dist/site` (`index.html` is at that root).
-- Build command: `npm ci && npm run build`.
-- The factory should publish releases/registry artifacts; this worker did not publish. The ready-to-publish Rust command is `cargo package -p migration-replay-gate`.
+- Static deployment root: `dist/site`; build command: `npm ci && npm run build`.
+  The committed `staticwebapp.config.json` is required for the factory Azure
+  Static Web Apps deployment to apply the cache policy.
+- Release package is ready but was **not published** (factory owns registry
+  credentials). Publish preparation command: `cargo package -p
+  migration-replay-gate`.
+- The CLI runtime still needs Docker or Podman plus access to
+  `postgres:16-alpine`. This container has neither runtime, so
+  `scripts/smoke-docker.sh` could not run; all parser/classification and fake
+  runtime integration boundaries were exercised locally.
 
-## Known gap / next step
+## Follow-up after deployment
 
-This worker image has neither Docker nor Podman, so the real-container smoke script could not be executed here. The container orchestration compiles, its parsing/safety/classification boundaries are tested, and the exact smoke command is checked in; run `scripts/smoke-docker.sh` on the first CI runner with Docker or Podman before cutting the binary release. No product functionality was replaced with a mock—the browser replay alone is recorded, as required for a static landing page.
+After the factory deploy completes, verify the live hashed `/assets/*` response
+uses `Cache-Control: public, max-age=31536000, immutable`, `/sw.js` uses
+`no-cache, max-age=0, must-revalidate`, and the live page identifies the new
+version before release promotion.

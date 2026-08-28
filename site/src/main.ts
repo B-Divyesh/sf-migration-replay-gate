@@ -98,6 +98,11 @@ window.addEventListener("online", updateNetworkState);
 window.addEventListener("offline", updateNetworkState);
 updateNetworkState();
 
-if ("serviceWorker" in navigator && location.protocol !== "http:") {
+const serviceWorkerAllowed =
+  location.protocol !== "http:" ||
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1";
+
+if ("serviceWorker" in navigator && serviceWorkerAllowed) {
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
 }

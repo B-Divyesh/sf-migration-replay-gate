@@ -4,6 +4,7 @@
 //! types and replay classification available to other Rust tools.
 
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fmt;
 
 pub mod runner;
@@ -80,10 +81,13 @@ pub struct GateReport {
     pub scenarios: Vec<ScenarioReport>,
 }
 
-/// Finds high-confidence destructive Postgres statements in captured text.
+/// Finds destructive Postgres statements in captured text.
 ///
-/// Comments are removed before matching. This deliberately avoids labeling a
-/// normal `ALTER TABLE ... ADD COLUMN` as destructive.
+/// Comments are removed before matching. Every PostgreSQL `DROP` statement is
+/// considered destructive because it removes a database object. `TRUNCATE`
+/// and `ALTER TABLE` / `ALTER DOMAIN` removal clauses are also blocked. This
+/// deliberately avoids labeling a normal `ALTER TABLE ... ADD COLUMN` as
+/// destructive.
 ///
 /// ```
 /// use migration_replay_gate::destructive_statements;
@@ -96,12 +100,11 @@ pub fn destructive_statements(text: &str) -> Vec<String> {
         .into_iter()
         .filter(|statement| {
             let normalized = normalize_sql(statement);
-            normalized.starts_with("DROP TABLE ")
-                || normalized.starts_with("DROP SCHEMA ")
-                || normalized.starts_with("DROP DATABASE ")
-                || normalized.starts_with("DROP TYPE ")
+            normalized.starts_with("DROP ")
                 || normalized.starts_with("TRUNCATE ")
-                || (normalized.starts_with("ALTER TABLE ") && normalized.contains(" DROP COLUMN "))
+                || ((normalized.starts_with("ALTER TABLE ")
+                    || normalized.starts_with("ALTER DOMAIN "))
+                    && normalized.contains(" DROP "))
         })
         .collect()
 }
@@ -139,7 +142,12 @@ pub fn classify_scenario(
         });
     }
 
+    let mut seen_destructive_sql = HashSet::new();
     for statement in destructive_statements(&combined) {
+        let normalized = normalize_sql(&statement);
+        if !seen_destructive_sql.insert(normalized) {
+            continue;
+        }
         findings.push(Finding {
             kind: FindingKind::DestructiveSql,
             message: "Observed destructive DDL during replay.".to_owned(),
@@ -249,6 +257,56 @@ mod tests {
         let found = destructive_statements(sql);
         assert_eq!(found.len(), 2);
         assert!(found[0].contains("DROP COLUMN"));
+    }
+
+    #[test]
+    fn destructive_detection_covers_postgres_object_and_integrity_removals() {
+        let sql = "
+            DROP INDEX IF EXISTS idx_accounts;
+            DROP VIEW account_summary;
+            DROP SEQUENCE account_ids;
+            ALTER TABLE accounts DROP CONSTRAINT accounts_owner_id_fkey;
+            ALTER DOMAIN account_status DROP CONSTRAINT account_status_check;
+            -- DROP TABLE commented_out;
+            ALTER TABLE accounts ADD COLUMN handle text;
+        ";
+
+        let found = destructive_statements(sql);
+        assert_eq!(found.len(), 5);
+        assert!(
+            found
+                .iter()
+                .any(|statement| statement.contains("DROP INDEX"))
+        );
+        assert!(
+            found
+                .iter()
+                .any(|statement| statement.contains("DROP VIEW"))
+        );
+        assert!(
+            found
+                .iter()
+                .any(|statement| statement.contains("DROP SEQUENCE"))
+        );
+        assert!(
+            found
+                .iter()
+                .any(|statement| statement.contains("DROP CONSTRAINT"))
+        );
+    }
+
+    #[test]
+    fn destructive_findings_are_deduplicated_between_logs_and_command_output() {
+        let report = classify_scenario(
+            ScenarioKind::CleanApply,
+            Some(0),
+            5,
+            vec!["DROP INDEX idx_accounts".into()],
+            "DROP INDEX idx_accounts;".into(),
+        );
+
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.findings[0].kind, FindingKind::DestructiveSql);
     }
 
     #[test]
