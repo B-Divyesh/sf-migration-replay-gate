@@ -92,9 +92,18 @@ cargo package -p migration-replay-gate --allow-dirty
   `scripts/smoke-docker.sh` could not run; all parser/classification and fake
   runtime integration boundaries were exercised locally.
 
-## Follow-up after deployment
+## Deployment evidence
 
-After the factory deploy completes, verify the live hashed `/assets/*` response
-uses `Cache-Control: public, max-age=31536000, immutable`, `/sw.js` uses
-`no-cache, max-age=0, must-revalidate`, and the live page identifies the new
-version before release promotion.
+- Deployed with `/opt/fleet/lib/deploy-static.sh migration-replay-gate
+  dist/site`; Azure Static Web Apps deployment
+  `3f78c5aa-76a8-4f70-aa97-a33e7a186071` completed successfully to
+  `kind-glacier-03f56290f.7.azurestaticapps.net`, with the existing custom
+  domain ready.
+- Live <https://migration-replay-gate.sociobot.in/> now identifies as
+  `v0.1.1`. Its hashed JS response and the mobile WebP response return
+  `Cache-Control: public, max-age=31536000, immutable`; `/sw.js` returns
+  `Cache-Control: no-cache, max-age=0, must-revalidate`.
+- `/opt/fleet/lib/verify-url.sh` against the live URL passed: HTTPS 200,
+  841 ms browser load in this worker, no console/page errors, title present,
+  `lang=en`, exactly one H1, main landmark, no missing image alt text, and no
+  unlabeled buttons.
