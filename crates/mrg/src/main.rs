@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, error::ErrorKind as ClapErrorKind};
 use migration_replay_gate::runner::{ErrorKind, GateOptions, RuntimeChoice, run_gate};
 use migration_replay_gate::{FindingKind, ScenarioStatus, Verdict};
 use serde_json::json;
@@ -61,7 +61,17 @@ enum Commands {
 }
 
 fn main() -> ExitCode {
-    let Cli { command } = Cli::parse();
+    let Cli { command } = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => {
+            let exit_code = match error.kind() {
+                ClapErrorKind::DisplayHelp | ClapErrorKind::DisplayVersion => ExitCode::SUCCESS,
+                _ => ExitCode::from(3),
+            };
+            let _ = error.print();
+            return exit_code;
+        }
+    };
     match command {
         Commands::Gate {
             command,

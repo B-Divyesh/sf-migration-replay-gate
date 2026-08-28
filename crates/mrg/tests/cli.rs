@@ -28,6 +28,50 @@ fn rejects_a_production_connection_string_with_documented_exit_code() {
 }
 
 #[test]
+fn parser_invalid_input_uses_the_documented_exit_code() {
+    let fixture = format!(
+        "{}/../../fixtures/example/partial.sql",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let cases: [(&[&str], &str); 2] = [
+        (&["gate", "--command", "true", "--json"], "--partial <FILE>"),
+        (
+            &[
+                "gate",
+                "--command",
+                "true",
+                "--partial",
+                &fixture,
+                "--runtime",
+                "docker",
+                "--json",
+                "--timeout",
+                "0",
+            ],
+            "0 is not in 1..=3600",
+        ),
+    ];
+
+    for (arguments, expected_message) in cases {
+        let output = Command::new(env!("CARGO_BIN_EXE_mrg"))
+            .args(arguments)
+            .output()
+            .expect("run mrg");
+
+        assert_eq!(
+            output.status.code(),
+            Some(3),
+            "parser error must remain distinct from unsafe replay: {expected_message}"
+        );
+        let stderr = String::from_utf8(output.stderr).expect("utf8 parser error");
+        assert!(
+            stderr.contains(expected_message),
+            "unexpected parser error: {stderr}"
+        );
+    }
+}
+
+#[test]
 fn reports_missing_runtime_with_documented_exit_code() {
     let fixture = format!(
         "{}/../../fixtures/example/partial.sql",

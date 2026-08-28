@@ -1,6 +1,6 @@
 [package]
 name = "migration-replay-gate"
-version = "0.1.1"
+version = "0.1.2"
 description = "Replay migration commands against disposable clean, repeated, and partial Postgres states"
 edition.workspace = true
 license.workspace = true

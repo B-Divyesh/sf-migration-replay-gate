@@ -2,6 +2,12 @@
 
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.2] - 2026-08-28
+
+### Fixed
+
+- Return exit 3 for Clap-level invalid invocations, preserving exit 2 exclusively for completed unsafe replay outcomes.
+
 ## [0.1.1] - 2026-08-28
 
 ### Fixed
